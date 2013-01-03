@@ -88,91 +88,91 @@ import Text.XML.Light
 
 import qualified Data.Map as Map
 
-nameQ :: ArrowList (~>) => Content ~> QName
+nameQ :: ArrowList arr => Content `arr` QName
 nameQ = arr elName . getElem
 
-name :: ArrowList (~>) => Content ~> String
+name :: ArrowList arr => Content `arr` String
 name = arr qName . nameQ
 
-children :: ArrowList (~>) => Content ~> Content
+children :: ArrowList arr => Content `arr` Content
 children = arrL elContent . getElem
 
-attributes :: ArrowList (~>) => Content ~> Attr
+attributes :: ArrowList arr => Content `arr` Attr
 attributes = arrL elAttribs . getElem
 
-keyQ :: Arrow (~>) => Attr ~> QName
+keyQ :: Arrow arr => Attr `arr` QName
 keyQ = arr attrKey
 
-key :: Arrow (~>) => Attr ~> String
+key :: Arrow arr => Attr `arr` String
 key = arr (qName . attrKey)
 
-value :: Arrow (~>) => Attr ~> String
+value :: Arrow arr => Attr `arr` String
 value = arr attrVal
 
-text :: ArrowList (~>) => Content ~> String
+text :: ArrowList arr => Content `arr` String
 text = arr cdData . getText
 
-kind :: ArrowList (~>) => Content ~> CDataKind
+kind :: ArrowList arr => Content `arr` CDataKind
 kind = arr cdVerbatim . getText
 
 -- Helpers.
 
-getElem :: ArrowList (~>) => Content ~> Element
+getElem :: ArrowList arr => Content `arr` Element
 getElem = arrL (\c -> case c of Elem e -> [e]; _ -> [])
 
-getText :: ArrowList (~>) => Content ~> CData
+getText :: ArrowList arr => Content `arr` CData
 getText = arrL (\c -> case c of Text t -> [t]; _ -> [])
 
 ----------------
 
-isElem, isText, isCRef :: ArrowList (~>) => Content ~> Content
+isElem, isText, isCRef :: ArrowList arr => Content `arr` Content
 isElem = isA (\c -> case c of Elem {} -> True; _ -> False)
 isText = isA (\c -> case c of Text {} -> True; _ -> False)
 isCRef = isA (\c -> case c of CRef {} -> True; _ -> False)
 
 ----------------
 
-elemQ :: ArrowList (~>) => (QName -> Bool) -> Content ~> Content
+elemQ :: ArrowList arr => (QName -> Bool) -> Content `arr` Content
 elemQ f = arrL (\c -> case c of Elem e | f (elName e) -> [c]; _ -> [])
 
-elem :: ArrowList (~>) => String -> Content ~> Content
+elem :: ArrowList arr => String -> Content `arr` Content
 elem n = elemQ ((==n) . qName)
 
-attrQ :: (ArrowList (~>), ArrowChoice (~>)) => (QName -> Bool) -> Content ~> String
+attrQ :: (ArrowList arr, ArrowChoice arr) => (QName -> Bool) -> Content `arr` String
 attrQ f = (isA f . keyQ `guards` value) . attributes
 
-attr :: (ArrowList (~>), ArrowChoice (~>)) => String -> Content ~> String
+attr :: (ArrowList arr, ArrowChoice arr) => String -> Content `arr` String
 attr n = attrQ ((==n) . qName)
 
-childQ :: ArrowList (~>) => (QName -> Bool) -> Content ~> Content
+childQ :: ArrowList arr => (QName -> Bool) -> Content `arr` Content
 childQ f = elemQ f . children
 
-child :: ArrowList (~>) => String -> Content ~> Content
+child :: ArrowList arr => String -> Content `arr` Content
 child n = childQ ((==n) . qName)
 
-hasAttrQ :: (ArrowList (~>), ArrowChoice (~>)) => (QName -> Bool) -> Content ~> Content
+hasAttrQ :: (ArrowList arr, ArrowChoice arr) => (QName -> Bool) -> Content `arr` Content
 hasAttrQ f = filterA (isA f . keyQ . attributes)
 
-hasAttr :: (ArrowList (~>), ArrowChoice (~>)) => String -> Content ~> Content
+hasAttr :: (ArrowList arr, ArrowChoice arr) => String -> Content `arr` Content
 hasAttr n = hasAttrQ ((==n) . qName)
 
 ----------------
 
-deep :: (ArrowList (~>), ArrowPlus (~>)) => (Content ~> a) -> (Content ~> a)
+deep :: (ArrowList arr, ArrowPlus arr) => (Content `arr` a) -> (Content `arr` a)
 deep e = e <+> deep e . children
 
-deepWhen :: (ArrowList (~>), ArrowPlus (~>), ArrowChoice (~>)) => Content ~> c -> Content ~> a -> Content ~> a
+deepWhen :: (ArrowList arr, ArrowPlus arr, ArrowChoice arr) => Content `arr` c -> Content `arr` a -> Content `arr` a
 deepWhen g e = e <+> g `guards` deepWhen g e . children
 
-deepWhenNot :: (ArrowList (~>), ArrowPlus (~>), ArrowChoice (~>)) => Content ~> c -> Content ~> a -> Content ~> a
+deepWhenNot :: (ArrowList arr, ArrowPlus arr, ArrowChoice arr) => Content `arr` c -> Content `arr` a -> Content `arr` a
 deepWhenNot g = deepWhen (notA g)
 
-deepText :: (ArrowPlus (~>), ArrowList (~>)) => Content ~> String
+deepText :: (ArrowPlus arr, ArrowList arr) => Content `arr` String
 deepText = arr concat . list (deep text)
 
 ----------------
 
-toElemQ :: (ArrowPlus (~>), ArrowList (~>)) => (a ~> QName) -> [a ~> Attr] -> [a ~> Content] -> a ~> Content
+toElemQ :: (ArrowPlus arr, ArrowList arr) => (a `arr` QName) -> [a `arr` Attr] -> [a `arr` Content] -> a `arr` Content
 toElemQ q as cs = proc i ->
   do n <- q -< i
      a <- uniques . list (concatA as) -< i
@@ -181,76 +181,76 @@ toElemQ q as cs = proc i ->
   where
     uniques = arr (Map.elems . Map.fromListWith const . map (key &&& id))
 
-toElem :: (ArrowPlus (~>), ArrowList (~>)) => (a ~> String) -> [a ~> Attr] -> [a ~> Content] -> a ~> Content
+toElem :: (ArrowPlus arr, ArrowList arr) => (a `arr` String) -> [a `arr` Attr] -> [a `arr` Content] -> a `arr` Content
 toElem n = toElemQ (arr unqual . n)
 
-toAttrQ :: Arrow (~>) => (a ~> QName) -> (a ~> String) -> a ~> Attr
+toAttrQ :: Arrow arr => (a `arr` QName) -> (a `arr` String) -> a `arr` Attr
 toAttrQ q s = proc i ->
   do n <- q -< i
      v <- s -< i
      id -< Attr n v
 
-toAttr :: Arrow (~>) => (a ~> String) -> (a ~> String) -> a ~> Attr
+toAttr :: Arrow arr => (a `arr` String) -> (a `arr` String) -> a `arr` Attr
 toAttr n = toAttrQ (arr unqual . n)
 
-toText :: Arrow (~>) => String ~> Content
+toText :: Arrow arr => String `arr` Content
 toText = arr (\t -> Text (CData CDataText t Nothing))
 
 ----------------
 
-mkElemQ :: (ArrowPlus (~>), ArrowList (~>)) => QName -> [a ~> Attr] -> [a ~> Content] -> a ~> Content
+mkElemQ :: (ArrowPlus arr, ArrowList arr) => QName -> [a `arr` Attr] -> [a `arr` Content] -> a `arr` Content
 mkElemQ q = toElemQ (arr (const q))
 
-mkElem :: (ArrowPlus (~>), ArrowList (~>)) => String -> [a ~> Attr] -> [a ~> Content] -> a ~> Content
+mkElem :: (ArrowPlus arr, ArrowList arr) => String -> [a `arr` Attr] -> [a `arr` Content] -> a `arr` Content
 mkElem n = toElem (arr (const n))
 
-mkAttrQ :: Arrow (~>) => QName -> String ~> Attr
+mkAttrQ :: Arrow arr => QName -> String `arr` Attr
 mkAttrQ k = toAttrQ (arr (const k)) id
 
-mkAttr :: Arrow (~>) => String -> String ~> Attr
+mkAttr :: Arrow arr => String -> String `arr` Attr
 mkAttr k = toAttr (arr (const k)) id
 
-mkAttrValueQ :: Arrow (~>) => QName -> String -> a ~> Attr
+mkAttrValueQ :: Arrow arr => QName -> String -> a `arr` Attr
 mkAttrValueQ k v = mkAttrQ k . arr (const v)
 
-mkAttrValue :: Arrow (~>) => String -> String -> a ~> Attr
+mkAttrValue :: Arrow arr => String -> String -> a `arr` Attr
 mkAttrValue k v = mkAttr k . arr (const v)
 
-mkText :: Arrow (~>) => String -> a ~> Content
+mkText :: Arrow arr => String -> a `arr` Content
 mkText t = toText . arr (const t)
 
 ----------------
 
-process :: (ArrowApply (~>), ArrowList (~>), ArrowChoice (~>)) => [Content] ~> [Content] -> Content ~> Content
+process :: (ArrowApply arr, ArrowList arr, ArrowChoice arr) => [Content] `arr` [Content] -> Content `arr` Content
 process a = processor `when` isElem
   where processor = proc (Elem (Element n b c l)) ->
                     do s <- a -< c
                        id -<< Elem (Element n b s l)
 
-process1 :: (ArrowApply (~>), ArrowList (~>), ArrowChoice (~>)) => Content ~> Content -> Content ~> Content
+process1 :: (ArrowApply arr, ArrowList arr, ArrowChoice arr) => Content `arr` Content -> Content `arr` Content
 process1 a = process (list (a . unlist))
 
 -- | If the condition holds, apply the arrow and continue processing
 -- the children. Otherwise, do nothing and stop recursing.
-processDeep :: (ArrowApply (~>), ArrowList (~>), ArrowChoice (~>)) => Content ~> c -> Content ~> Content -> Content ~> Content
+processDeep :: (ArrowApply arr, ArrowList arr, ArrowChoice arr) => Content `arr` c -> Content `arr` Content -> Content `arr` Content
 processDeep c a = (process1 (processDeep c a) . a) `when` c
 
-processText :: ArrowList (~>) => String ~> String -> Content ~> Content
+processText :: ArrowList arr => String `arr` String -> Content `arr` Content
 processText a = toText . a . text
 
-processAttrs :: (ArrowPlus (~>), ArrowList (~>), ArrowChoice (~>)) => (Content ~> Attr) -> Content ~> Content
+processAttrs :: (ArrowPlus arr, ArrowList arr, ArrowChoice arr) => (Content `arr` Attr) -> Content `arr` Content
 processAttrs attrArr = toElem name [attrArr] [children] `when` isElem
 
 -- | When the input is an element, calculate attributes from the
 -- input, and add them to the attributes already on the input element.
-setAttrs :: (ArrowList (~>), ArrowPlus (~>), ArrowChoice (~>)) => (Content ~> Attr) -> Content ~> Content
+setAttrs :: (ArrowList arr, ArrowPlus arr, ArrowChoice arr) => (Content `arr` Attr) -> Content `arr` Content
 setAttrs attrArr = processAttrs (concatA [attributes, attrArr])
 
 ----------------
 
-printXml :: Arrow (~>) => Content ~> String
+printXml :: Arrow arr => Content `arr` String
 printXml = arr showContent
 
-parseXml :: ArrowList (~>) => String ~> Content
+parseXml :: ArrowList arr => String `arr` Content
 parseXml = arrL parseXML
 
