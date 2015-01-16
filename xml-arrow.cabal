@@ -1,5 +1,5 @@
 name:                xml-arrow
-version:             0.3.4.1
+version:             0.3.4.2
 description:         Haskell list arrows for XML manipulation.
 synopsis:            Haskell list arrows for XML manipulation.
 category:            Data, Generics
@@ -9,6 +9,11 @@ author:              Sebastiaan Visser
 maintainer:          haskell@fvisser.nl
 build-type:          Simple
 cabal-version:       >= 1.6
+
+extra-source-files:
+  CHANGELOG.md
+  LICENSE
+  README.md
 
 library
   ghc-options:       -Wall
