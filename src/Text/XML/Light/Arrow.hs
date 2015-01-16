@@ -1,91 +1,93 @@
-{-# LANGUAGE TypeOperators, Arrows #-}
+{-# LANGUAGE
+    Arrows
+  , TypeOperators
+  #-}
 {- |
 List arrows for querying, creating and modifying XML trees.
 -}
 module Text.XML.Light.Arrow
 (
 
--- * Selection.
+  -- * Selection.
 
-  name
-, children
-, attributes
-, key
-, value
-, text
-, kind
+    name
+  , children
+  , attributes
+  , key
+  , value
+  , text
+  , kind
 
--- * Filter.
+  -- * Filter.
 
-, isElem
-, isText
-, isCRef
+  , isElem
+  , isText
+  , isCRef
 
--- * By name.
+  -- * By name.
 
-, elem
-, attr
-, child
+  , elem
+  , attr
+  , child
 
-, hasAttr
+  , hasAttr
 
--- * Deep selection.
+  -- * Deep selection.
 
-, deep
-, deepWhen
-, deepWhenNot
-, deepText
+  , deep
+  , deepWhen
+  , deepWhenNot
+  , deepText
 
--- * Creation with only arrow components.
+  -- * Creation with only arrow components.
 
-, toElem
-, toAttr
-, toText
+  , toElem
+  , toAttr
+  , toText
 
--- * Creation with fixed components.
+  -- * Creation with fixed components.
 
-, mkElem
-, mkAttr
-, mkAttrValue
-, mkText
+  , mkElem
+  , mkAttr
+  , mkAttrValue
+  , mkText
 
--- * Processing child nodes.
+  -- * Processing child nodes.
 
-, process
-, process1
-, processDeep
-, processText
-, processAttrs
-, setAttrs
+  , process
+  , process1
+  , processDeep
+  , processText
+  , processAttrs
+  , setAttrs
 
--- * Parsing / printing.
+  -- * Parsing / printing.
 
-, printXml
-, parseXml
+  , printXml
+  , parseXml
 
--- * Qualified name variants.
+  -- * Qualified name variants.
 
-, nameQ
-, keyQ
-, elemQ
-, attrQ
-, childQ
-, hasAttrQ
-, toElemQ
-, toAttrQ
-, mkElemQ
-, mkAttrQ
-, mkAttrValueQ
+  , nameQ
+  , keyQ
+  , elemQ
+  , attrQ
+  , childQ
+  , hasAttrQ
+  , toElemQ
+  , toAttrQ
+  , mkElemQ
+  , mkAttrQ
+  , mkAttrValueQ
 
-)
-where
+  ) where
+
+import Prelude hiding (elem, id, (.))
 
 import Control.Arrow
 import Control.Arrow.ArrowList
 import Control.Category
-import Prelude hiding (elem, (.), id)
 import Text.XML.Light
-
 import qualified Data.Map as Map
 
 nameQ :: ArrowList arr => Content `arr` QName
@@ -253,4 +255,3 @@ printXml = arr showContent
 
 parseXml :: ArrowList arr => String `arr` Content
 parseXml = arrL parseXML
-
