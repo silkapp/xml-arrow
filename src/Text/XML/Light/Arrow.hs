@@ -85,7 +85,7 @@ module Text.XML.Light.Arrow
 import Prelude hiding (elem, id, (.))
 
 import Control.Arrow
-import Control.Arrow.ArrowList
+import Control.Arrow.List.Class
 import Control.Category
 import Text.XML.Light
 import qualified Data.Map as Map
